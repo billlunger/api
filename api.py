@@ -158,7 +158,7 @@ def index(quoteId):
     date = datetime.now().strftime('%m%d%H%M%S')
     convertPhases(df, locs, quoteId, lookP, lookB, lookM, phaseName, clientName, quoteName, headers, phases,date)
 
-    return '{"":""}'
+    return date
     
 ###################################################################################################
 
@@ -218,13 +218,15 @@ def phases(quoteId):
     quoteName=getQuoteInfo['quote']['name']
     phases=True
     date = datetime.now().strftime('%m%d%H%M%S')
-
+    out=[str(date)]
     for phase in phaseNames:
         phaseName = phase
         df1= df[df.phase == phase]
+        out.append(phaseName)
         convertPhases(df1,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quoteName,headers,phases,date)
-
-    return json.dumps(phaseNames.tolist())
+    print(out)
+    return str(out)
+    #return json.dumps(phaseNames.tolist())
 
 ###################################################################################################
 
