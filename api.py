@@ -11,7 +11,7 @@ import time
 
 app = Flask(__name__)
 
-
+#notes
 
 def getCreds():
     p = subprocess.Popen('node scrape.js', shell=True)
