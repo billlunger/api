@@ -329,7 +329,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             phase = row['phase']  # changed Name and Short Description to System
             df = df.append({'shortDescription': '--- ' + str(sys).upper() + ' ---',
                             'location': str(loca), 'system': str(sys), 'quantity': 1, 'laborPrice': ' ',
-                            'itemId': 'System:' + str(sys), 'type': 'S', 'order': 2, 'brand': ' ', 'parentId':0,'locationId':lid,'packageId':0}, ignore_index=True)
+                            'itemId': 'System:' + str(sys), 'type': 'S', 'order': 2,'packageItemId':0 , 'brand': ' ', 'parentId':0,'locationId':lid}, ignore_index=True)
 
 
     sortPackage = df.drop_duplicates(subset=['packageId'])
@@ -370,7 +370,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     df = df.sort_values(['locationId','system','packageItemId','parentId','order'])
     for i, row in df.iterrows():
 
-        if 'White Glove' in row['itemId']:
+        if 'White Glove' in str(row['itemId']):
             df.loc[i,'itemId'] = df.loc[i,'itemId'].replace('LAB:','')
     
     df['Vendor Part #'] = df['model']
