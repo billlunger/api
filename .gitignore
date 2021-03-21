@@ -1,0 +1,6 @@
+creds.json
+lookup.csv
+node_modules/
+venv/
+apiold.py
+.DS_Store
