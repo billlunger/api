@@ -1,4 +1,5 @@
 from flask import Flask, send_from_directory, send_file
+from datetime import datetime
 import requests
 import json
 import pandas as pd
@@ -154,8 +155,8 @@ def index(quoteId):
     phases=False
     phaseName=''
 
-
-    convertPhases(df, locs, quoteId, lookP, lookB, lookM, phaseName, clientName, quoteName, headers, phases)
+    date = datetime.now().strftime('%m%d%H%M%S')
+    convertPhases(df, locs, quoteId, lookP, lookB, lookM, phaseName, clientName, quoteName, headers, phases,date)
 
     return '{"":""}'
     
@@ -216,11 +217,12 @@ def phases(quoteId):
     clientName=getQuoteInfo['quote']['client']
     quoteName=getQuoteInfo['quote']['name']
     phases=True
+    date = datetime.now().strftime('%m%d%H%M%S')
 
     for phase in phaseNames:
         phaseName = phase
         df1= df[df.phase == phase]
-        convertPhases(df1,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quoteName,headers,phases)
+        convertPhases(df1,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quoteName,headers,phases,date)
 
     return json.dumps(phaseNames.tolist())
 
@@ -235,7 +237,7 @@ def download(quoteId):
 
 ###################################################################################################
 
-def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quoteName,headers,phases):
+def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quoteName,headers,phases,date):
 
     df['packageDescription']=df['packageItemId']
     df['packageItemId'] = df['packageItemId'].astype('Int32')
@@ -390,9 +392,9 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     quoteName = re.sub('[^A-Za-z0-9.,& ]+', '-',quoteName)
     
     if phases:
-        output = '~/Desktop/'+clientName+'-'+quoteName +'-'+str(phaseName)+'.csv'
+        output = '~/Desktop/'+clientName+'-'+quoteName +'-'+str(phaseName)+'('+date+')'+'.csv'
     else:
-        output = '~/Desktop/'+clientName+'-'+quoteName+'.csv'
+        output = '~/Desktop/'+clientName+'-'+quoteName+'('+date+')'+'.csv'
     df.to_csv(output, index=False, header=None, line_terminator='\r\n')
 
 ###################################################################################################
