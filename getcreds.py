@@ -20,7 +20,7 @@ def job():
 
 #schedule.every(1).minutes.do(job)
 schedule.every(6).hours.do(job)
-schedule.ever(1).minutes.do(deleteFiles)
+schedule.every(1).minutes.do(deleteFiles)
 
 while True:
     schedule.run_pending()
