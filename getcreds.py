@@ -5,6 +5,12 @@ import subprocess
 
 
 #p = subprocess.Popen('node scrape.js', shell=True)
+def deleteFiles():
+    target = '/home/bill/Desktop/'
+    for x in os.listdir(target):
+        if x.endswith('.csv'):
+            os.unlink(target+x)
+
 
 def job():
     p = subprocess.Popen('node scrape.js', shell=True)
@@ -14,6 +20,7 @@ def job():
 
 #schedule.every(1).minutes.do(job)
 schedule.every(6).hours.do(job)
+schedule.ever(1).minutes.do(deleteFiles)
 
 while True:
     schedule.run_pending()
