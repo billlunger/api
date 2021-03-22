@@ -221,13 +221,13 @@ def phases(quoteId):
     date = datetime.now().strftime('%m%d%H%M%S')
     out={}
     out[0]=date
+    phaseNumber=1
     for phase in phaseNames:
-        i=1
         phaseName = phase
         df1= df[df.phase == phase]
-        out[i]=phaseName
+        out[phaseNumber]=phaseName
         convertPhases(df1,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quoteName,headers,phases,date)
-        i+=1
+        phaseNumber+=1
     print(out)
     return out
     #return json.dumps(phaseNames.tolist())
