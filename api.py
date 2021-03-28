@@ -393,8 +393,14 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     df = df[['itemId', 'shortDescription', 'quantity', 'unitPrice', 'unitCost', 'totalPrice', 'type', 'List Price',
              'UOM', 'supplier', 'Vendor Part #', 'phase', 'location']]
 
-    df = df.str.replace("''",'in.')
-    df = df.str.replace('"','in.')
+    df['shortDescription'] = df['shortDescription'].str.replace("''",'in.')
+    df['shortDescription'] = df['shortDescription'].str.replace('"','in.')
+    df['Vendor Part #'] = df['Vendor Part #'].str.replace("''",'in.')
+    df['Vendor Part #'] = df['Vendor Part #'].str.replace('"','in.')
+    df['itemId'] = df['itemId'].str.replace("''",'in.')
+    df['itemId'] = df['itemId'].str.replace('"','in.')
+    df['location'] = df['location'].str.replace("''",'in.')
+    df['location'] = df['location'].str.replace('"','in.')
     quoteName = re.sub('[^A-Za-z0-9.,& ]+', '-',quoteName)
     
     if phases:
