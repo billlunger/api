@@ -295,7 +295,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             df.loc[index, 'type'] = 'L'
         if row['brand'] =='LAB':
             df.loc[index, 'type'] = 'L'
-        elif row['brand'] == 'Customer Supplied':
+        elif row['brand'] == 'Customer Supplied' or 'Rental':
             df.loc[index, 'type'] = 'S'
     
     ssl._create_default_https_context = ssl._create_unverified_context
