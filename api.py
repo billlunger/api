@@ -295,9 +295,11 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             df.loc[index, 'type'] = 'L'
         if row['brand'] =='LAB':
             df.loc[index, 'type'] = 'L'
-        elif row['brand'] == 'Customer Supplied' or 'Rental':
+        elif row['brand'] == 'Customer Supplied':
             df.loc[index, 'type'] = 'S'
-    
+        elif row['brand'] == 'Rental':
+            df.loc[index, 'type'] = 'S'
+            
     ssl._create_default_https_context = ssl._create_unverified_context
     url = 'https://docs.google.com/spreadsheets/d/1SxIpBg_hNnX8shTlaWBJ0YlccXuczHPpi18oxoAmmqQ/export?format=csv&gid=0'
     # Set working directory to Current User Home
