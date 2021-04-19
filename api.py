@@ -237,7 +237,7 @@ def phases(quoteId):
 app.config["DOWNLOAD"] = "/home/bill/Desktop"
 @app.route('/api/download/<quoteId>', methods=['GET'])
 def download(quoteId):
-    return send_from_directory(app.config["DOWNLOAD"], filename=quoteId, as_attachment=False)
+    return send_from_directory(app.config["DOWNLOAD"], filename=quoteId, as_attachment=True)
 
 
 
