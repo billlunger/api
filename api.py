@@ -431,7 +431,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     df['location'] = df['location'].str.replace('"','in.')
     quoteName = re.sub('[^A-Za-z0-9.,& ]+', '-',quoteName)
 ##################### write text file  
-    p='/home/bill/api/'
+    p='/home/bill/Desktop/'
     if phases:
         txt=open(f'{p}{clientName}-{quoteName}-{str(phaseName)}({date}).txt', "a")
     else:
