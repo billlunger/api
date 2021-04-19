@@ -251,11 +251,17 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     df['type']='M'
     df['locationId'] = df['locationId'].astype(str)
     x={}
+    locDesc={}
     n=1
     for i in locs:
         x[str(i)]=n
         n+=1
-    df=df.replace(to_replace={'locationId':x}, value=None)
+        desc=requests.get(f'https://api.d-tools.cloud/Quote/api/v1/QuoteLocations/GetQuoteLocation?id={i}',headers=headers).json() ############################################ Added Get Description
+        descs=desc['description']
+        rm=desc['name']
+        locDesc[str(i)]=descs
+
+    #df=df.replace(to_replace={'locationId':x}, value=None)
 
 
     pack=df['packageItemId'].unique().dropna()  
@@ -277,10 +283,15 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
         pa=row['packageQuantity']
         if brand == 'LAB':
             df.loc[i,'unitPrice'] = l/q
-            df.loc[i,'order'] = 6    
+            df.loc[i,'order'] = 7
+        else:
+            df.loc[i,'order'] = 5    
         df.loc[i,'quantity']=q*pa*p
+        if brand == 'Accessory':
+            df.loc[i,'order'] = 6
+            df.loc[i, 'type'] = 'S'
 
-    df.order = 5
+    #df.order = 5
     for i,row in df.iterrows():
         accessory=row['hasAccessories']
         if accessory == True:
@@ -290,16 +301,18 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     #def cd(path):
     #    os.chdir(os.path.expanduser(path))
 
-    for index, row in df.iterrows():
+    for i, row in df.iterrows():
+        short=row['shortDescription']
         if "SCOPE" in row['brand']:
-            df.loc[index, 'type'] = 'L'
+            df.loc[i, 'type'] = 'S'
+            df.loc[i,'shortDescription'] = '>>> '+short
         if row['brand'] =='LAB':
-            df.loc[index, 'type'] = 'L'
+            df.loc[i, 'type'] = 'L'
         elif row['brand'] == 'Customer Supplied':
-            df.loc[index, 'type'] = 'S'
+            df.loc[i, 'type'] = 'S'
         elif row['brand'] == 'Rental':
-            df.loc[index, 'type'] = 'S'
-            
+            df.loc[i, 'type'] = 'S'
+
     ssl._create_default_https_context = ssl._create_unverified_context
     url = 'https://docs.google.com/spreadsheets/d/1SxIpBg_hNnX8shTlaWBJ0YlccXuczHPpi18oxoAmmqQ/export?format=csv&gid=0'
     # Set working directory to Current User Home
@@ -330,21 +343,23 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
         part = df.loc[i, "part"]
         if brand == "Sonance":
             df.loc[i, 'itemId'] = brand + ':' + part
-    
+############# add system names    
     rooms = df.drop_duplicates(subset=['location', 'system'])
     for index, row in rooms.iterrows():
             sys = row['system']
             loca = row['location']
             lid=row['locationId']
             phase = row['phase']  # changed Name and Short Description to System
-            df = df.append({'shortDescription': '--- ' + str(sys).upper() + ' ---',
+            df = df.append({'shortDescription':str(sys).upper(),
                             'location': str(loca), 'system': str(sys), 'quantity': 1, 'laborPrice': ' ',
-                            'itemId': 'System:' + str(sys), 'type': 'S', 'order': 2,'packageItemId':0 , 'brand': ' ', 'parentId':0,'locationId':lid}, ignore_index=True)
-
+                            'itemId': 'System:' + str(sys), 'type': 'S', 'order': 2,'packageItemId':0 , 'brand': ' ', 'parentId':1,'locationId':lid}, ignore_index=True)
+            df = df.append({'shortDescription': '---',
+                            'location': str(loca), 'quantity': 1, 'system':  str(sys), 'itemId': 'COMMENT:DIVIDER','packageItemId':0 ,
+                            'type': 'S', 'order': 1, 'parentId':1,'locationId':lid}, ignore_index=True)
 
     sortPackage = df.drop_duplicates(subset=['packageId'])
     sortPackage = sortPackage[sortPackage.packageId.notnull()]
-
+############# add package name and dividers
     for i, row in sortPackage.iterrows():
             pId=row['packageId']
             pIId=row['packageItemId']
@@ -366,18 +381,27 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
                             'type': 'S', 'order': 1,'packageId':pId ,'packageItemId':pIId,'parentId':0,'locationId':location}, ignore_index=True)
  
     sys = df.drop_duplicates(subset=['location'])
-
+############# add room names and dividers
     for i, row in sys.iterrows():
             lid=row['locationId']
             value=row['location']
-            df = df.append({'shortDescription': '--- ' + str(value).upper() + ' ---',
+            df = df.append({'shortDescription': '[' + str(value).upper() + ']',
                             'location': str(value), 'quantity': 1, 'system': ' ', 'itemId': 'Room:' + str(value),
                             'type': 'S', 'order': 2, 'parentId':0,'locationId':lid}, ignore_index=True)
             df = df.append({'shortDescription': '----------------------------',
                             'location': str(value), 'quantity': 1, 'system': ' ', 'itemId': 'COMMENT:DIVIDER',
                             'type': 'S', 'order': 1, 'parentId':0,'locationId':lid}, ignore_index=True)
+            ########## add room description
+            df = df.append({'shortDescription': str(lid),
+                            'location': str(value), 'quantity': 1, 'system': ' ', 'itemId': 'Description',
+                            'type': 'S', 'order': 3, 'parentId':0,'locationId':lid}, ignore_index=True)
     
-    df = df.sort_values(['locationId','system','packageItemId','parentId','order'])
+################ replace locationID with Description for room description
+    #df['shortDescription'] = df['shortDescription'].replace(locDesc)
+    df=df.replace(to_replace={'shortDescription':locDesc}, value=None)
+    df=df.replace(to_replace={'locationId':x}, value=None)##################################################
+
+    df = df.sort_values(['locationId','system','packageItemId','parentId','order','unitPrice'],ascending=[True,True,True,True,True,False]) #
     for i, row in df.iterrows():
 
         if 'White Glove' in str(row['itemId']):
@@ -396,6 +420,8 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
              'UOM', 'supplier', 'Vendor Part #', 'phase', 'location']]
 
     df['shortDescription'] = df['shortDescription'].str.replace("''",'in.')
+    df['shortDescription'] = df['shortDescription'].str.replace('<p>','')
+    df['shortDescription'] = df['shortDescription'].str.replace('</p>','')
     df['shortDescription'] = df['shortDescription'].str.replace('"','in.')
     df['Vendor Part #'] = df['Vendor Part #'].str.replace("''",'in.')
     df['Vendor Part #'] = df['Vendor Part #'].str.replace('"','in.')
@@ -404,7 +430,31 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     df['location'] = df['location'].str.replace("''",'in.')
     df['location'] = df['location'].str.replace('"','in.')
     quoteName = re.sub('[^A-Za-z0-9.,& ]+', '-',quoteName)
-    
+##################### write text file  
+    p='/home/bill/api/'
+    if phases:
+        txt=open(f'{p}{clientName}-{quoteName}-{str(phaseName)}({date}).txt', "a")
+    else:
+        txt=open(f'{p}{clientName}-{quoteName}({date}).txt', "a")
+
+    for i, row in df.iterrows():
+        if 'Room' in row['itemId']:
+            txt.write('\n' + row['shortDescription']+'\n')
+        if 'Description' in row['itemId']:
+            if row['shortDescription']:
+                txt.write('Description: ' + row['shortDescription']+'\n')
+        if 'System' in row['itemId']:
+            txt.write('\n' + row['shortDescription']+'\n')
+        if 'SCOPE' in row['itemId']:
+            txt.write(row['shortDescription']+'\n')
+        txt.close
+####################### drop Description
+    filt= df['itemId'] == 'Description'
+    df = df.drop(index=df[filt].index)
+    #for i, row in df.iterrows():
+    #    if 'SCOPE' in row['itemId']:
+    #        df = df.drop(index=i)
+
     if phases:
         output = '~/Desktop/'+clientName+'-'+quoteName +'-'+str(phaseName)+'('+date+')'+'.csv'
     else:
