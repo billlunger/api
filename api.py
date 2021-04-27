@@ -305,12 +305,15 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
         short=row['shortDescription']
         if "SCOPE" in row['brand']:
             df.loc[i, 'type'] = 'S'
+            df.loc[i,'brand'] = 'SCOPE'
             df.loc[i,'shortDescription'] = '>>> '+short
         if row['brand'] =='LAB':
             df.loc[i, 'type'] = 'L'
         elif row['brand'] == 'Customer Supplied':
             df.loc[i, 'type'] = 'S'
         elif row['brand'] == 'Rental':
+            df.loc[i, 'type'] = 'S'
+        elif row['brand'] == 'Wiring':
             df.loc[i, 'type'] = 'S'
 
     ssl._create_default_https_context = ssl._create_unverified_context
@@ -341,6 +344,8 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     for i in df.index:
         brand = df.loc[i, 'brand']
         part = df.loc[i, "part"]
+        if brand == 'SCOPE':
+            df.loc[i,'itemId'] = 'SCOPE'
         if brand == "Sonance":
             df.loc[i, 'itemId'] = brand + ':' + part
 ############# add system names    
@@ -352,7 +357,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             phase = row['phase']  # changed Name and Short Description to System
             df = df.append({'shortDescription':str(sys).upper(),
                             'location': str(loca), 'system': str(sys), 'quantity': 1, 'laborPrice': ' ',
-                            'itemId': 'System:' + str(sys), 'type': 'S', 'order': 2,'packageItemId':0 , 'brand': ' ', 'parentId':1,'locationId':lid}, ignore_index=True)
+                            'itemId': 'System', 'type': 'S', 'order': 2,'packageItemId':0 , 'brand': ' ', 'parentId':1,'locationId':lid}, ignore_index=True)
             df = df.append({'shortDescription': '---',
                             'location': str(loca), 'quantity': 1, 'system':  str(sys), 'itemId': 'COMMENT:DIVIDER','packageItemId':0 ,
                             'type': 'S', 'order': 1, 'parentId':1,'locationId':lid}, ignore_index=True)
@@ -370,7 +375,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             location=row['locationId']
             parent=row['parentId']
             df = df.append({'shortDescription': str(short).upper(),'system':sys,
-                            'location': str(value), 'quantity': 1, 'itemId': name,
+                            'location': str(value), 'quantity': 1, 'itemId': 'Package',
                             'type': 'S', 'order': 3,'packageId':pId ,'packageItemId':pIId, 'parentId':1,'locationId':location}, ignore_index=True)
 
             df = df.append({'shortDescription': '^^^^^^^^^^^^^^^^^^^^^^^^^^^^','system':sys,
@@ -386,7 +391,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             lid=row['locationId']
             value=row['location']
             df = df.append({'shortDescription': '[' + str(value).upper() + ']',
-                            'location': str(value), 'quantity': 1, 'system': ' ', 'itemId': 'Room:' + str(value),
+                            'location': str(value), 'quantity': 1, 'system': ' ', 'itemId': 'Room',
                             'type': 'S', 'order': 2, 'parentId':0,'locationId':lid}, ignore_index=True)
             df = df.append({'shortDescription': '----------------------------',
                             'location': str(value), 'quantity': 1, 'system': ' ', 'itemId': 'COMMENT:DIVIDER',
