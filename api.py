@@ -455,7 +455,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
                 html = re.sub(r'<ul>', '', html)
                 html = re.sub(r'<p>', '    ', html)
                 html = re.sub(r'<li>', '      *', html)
-                html = re.sub(r'<li class="ql-indent-1">', '        *', html)
+                html = re.sub(r'<li class.*?>', '        *', html)
                 txt.write('Description: \n' + html+'\n')
         if 'System' in row['itemId']:
             txt.write('\n' + row['shortDescription']+'\n')
