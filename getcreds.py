@@ -10,6 +10,8 @@ def deleteFiles():
     for x in os.listdir(target):
         if x.endswith('.csv'):
             os.unlink(target+x)
+        if x.endswith('.txt'):
+            os.unlink(target+x)
 
 
 def job():
