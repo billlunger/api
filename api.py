@@ -336,7 +336,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             df.loc[i, 'brand'] = 'Customer Supplied'
             df.loc[i, 'shortDescription'] = 'Customer Supplied '+ part
             df.loc[i, 'model'] = 'Device'
-            df.loc[i, 'type'] = 'S'        
+            df.loc[i, 'type'] = 'S'       
     
     df['itemId'] = df['brand'] + ':' + df['model']
 
@@ -348,6 +348,9 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             df.loc[i,'itemId'] = 'SCOPE'
         if brand == "Sonance":
             df.loc[i, 'itemId'] = brand + ':' + part
+        if brand == 'Customer Supplied':
+            df.loc[i, 'itemId'] = 'Customer Supplied'
+
 ############# add system names    
     rooms = df.drop_duplicates(subset=['location', 'system'])
     for index, row in rooms.iterrows():
@@ -425,8 +428,8 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
              'UOM', 'supplier', 'Vendor Part #', 'phase', 'location']]
 
     df['shortDescription'] = df['shortDescription'].str.replace("''",'in.')
-    df['shortDescription'] = df['shortDescription'].str.replace('<p>','')
-    df['shortDescription'] = df['shortDescription'].str.replace('</p>','')
+    #df['shortDescription'] = df['shortDescription'].str.replace('<p>','')
+    #df['shortDescription'] = df['shortDescription'].str.replace('</p>','')
     df['shortDescription'] = df['shortDescription'].str.replace('"','in.')
     df['Vendor Part #'] = df['Vendor Part #'].str.replace("''",'in.')
     df['Vendor Part #'] = df['Vendor Part #'].str.replace('"','in.')
@@ -447,7 +450,13 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             txt.write('\n' + row['shortDescription']+'\n')
         if 'Description' in row['itemId']:
             if row['shortDescription']:
-                txt.write('Description: ' + row['shortDescription']+'\n')
+                html = row['shortDescription']
+                html = re.sub(r'</.*?>', '\n', html)
+                html = re.sub(r'<ul>', '', html)
+                html = re.sub(r'<p>', '    ', html)
+                html = re.sub(r'<li>', '      *', html)
+                html = re.sub(r'<li class="ql-indent-1">', '        *', html)
+                txt.write('Description: \n' + html+'\n')
         if 'System' in row['itemId']:
             txt.write('\n' + row['shortDescription']+'\n')
         if 'SCOPE' in row['itemId']:
