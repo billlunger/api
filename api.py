@@ -449,12 +449,13 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     par = (('quoteId', quoteId),)
     resp = requests.get('https://api.d-tools.cloud/Quote/api/v1/QuoteScopeOfWorks/GetQuoteScopeOfWork', headers=headers, params=par).json()
     html1 = resp['content']
-    html1 = re.sub(r'</.*?>', '\n', html1)
-    html1 = re.sub(r'<ul>', '', html1)
-    html1 = re.sub(r'<p>', '    ', html1)
-    html1 = re.sub(r'<li>', '      *', html1)
-    html1 = re.sub(r'<li class.*?>', '        *', html1)
-    txt.write('Project Description: \n' + html1)
+    if html1:
+        html1 = re.sub(r'</.*?>', '\n', html1)
+        html1 = re.sub(r'<ul>', '', html1)
+        html1 = re.sub(r'<p>', '    ', html1)
+        html1 = re.sub(r'<li>', '      *', html1)
+        html1 = re.sub(r'<li class.*?>', '        *', html1)
+        txt.write('Project Description: \n' + html1)
 ######################## Write Scopes and Descriptions
     for i, row in df.iterrows():
         if 'Room' in row['itemId']:
