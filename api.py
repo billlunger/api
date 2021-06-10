@@ -452,6 +452,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     if html1:
         html1 = re.sub(r'</.*?>', '\n', html1)
         html1 = re.sub(r'<ul>', '', html1)
+        html1 = re.sub(r'<br>', '\n', html1)
         html1 = re.sub(r'<p>', '    ', html1)
         html1 = re.sub(r'<li>', '      *', html1)
         html1 = re.sub(r'<li class.*?>', '        *', html1)
@@ -465,6 +466,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
                 html = row['shortDescription']
                 html = re.sub(r'</.*?>', '\n', html)
                 html = re.sub(r'<ul>', '', html)
+                html = re.sub(r'<br>', '\n', html)
                 html = re.sub(r'<p>', '    ', html)
                 html = re.sub(r'<li>', '      *', html)
                 html = re.sub(r'<li class.*?>', '        *', html)
