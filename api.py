@@ -315,6 +315,8 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             df.loc[i, 'type'] = 'S'
         elif row['brand'] == 'Wiring':
             df.loc[i, 'type'] = 'S'
+        elif row['brand'] == 'Monitoring':
+            df.loc[i, 'type'] = 'S'
 
     ssl._create_default_https_context = ssl._create_unverified_context
     url = 'https://docs.google.com/spreadsheets/d/1SxIpBg_hNnX8shTlaWBJ0YlccXuczHPpi18oxoAmmqQ/export?format=csv&gid=0'
@@ -350,6 +352,8 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             df.loc[i, 'itemId'] = brand + ':' + part
         if brand == 'Customer Supplied':
             df.loc[i, 'itemId'] = 'Customer Supplied'
+        if brand == 'Monitoring':
+            df.loc[i, 'itemId'] = 'Monitoring'
 
 ############# add system names    
     rooms = df.drop_duplicates(subset=['location', 'system'])
@@ -460,6 +464,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
 ######################## Write Scopes and Descriptions
     for i, row in df.iterrows():
         if 'Room' in row['itemId']:
+
             txt.write('\n' + row['shortDescription']+'\n')
         if 'Description' in row['itemId']:
             if row['shortDescription']:
