@@ -350,6 +350,8 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
             df.loc[i,'itemId'] = 'SCOPE'
         if brand == "Sonance":
             df.loc[i, 'itemId'] = brand + ':' + part
+        if brand == "iPort":
+            df.loc[i, 'itemId'] = brand + ':' + part
         if brand == 'Customer Supplied':
             df.loc[i, 'itemId'] = 'Customer Supplied'
         if brand == 'Monitoring':

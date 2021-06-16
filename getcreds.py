@@ -15,9 +15,9 @@ def deleteFiles():
 
 
 def job():
-    p = subprocess.Popen('node scrape.js', shell=True)
+#    p = subprocess.Popen('node scrape.js', shell=True)
 #    return p
-#    p=os.system("node /home/bill/api/scrape.js")
+    p=os.system("node /home/bill/api/scrape.js")
 #    p
 
 #schedule.every(1).minutes.do(job)
