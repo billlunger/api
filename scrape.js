@@ -25,7 +25,7 @@ const navigations = async () => {
 	const user = 'bill.lunger@brilliantav.com';
 	const password = 'Fr@nk3nPul$E';
 
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
 
   await delay(1000);
