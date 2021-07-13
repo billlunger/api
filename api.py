@@ -76,7 +76,7 @@ def opportunities():
     print(getJson()['dtToken'])
     print(getJson()['accessToken'])
     headers = head()
-    getOpportunities = requests.get('https://api.d-tools.cloud/Opportunity/api/v1/Opportunities/GetOpportunitiesForStages', headers=headers, params=paramsOpps).json()
+    getOpportunities = requests.get('https://api.d-tools.cloud/Opportunity/api/v1/Opportunities/GetOpportunitiesByStages', headers=headers, params=paramsOpps).json()
     return json.dumps(getOpportunities)
 
 ###################################################################################################
