@@ -99,6 +99,42 @@ def gettingCreds():
 
 ###################################################################################################
 
+@app.route('/api/getCatalog/<search>', methods=['GET'])
+def gettingCatalog(search):
+    
+    headers = head()
+    dt=pd.DataFrame()
+    search= search
+    page = 1
+    m=True
+    prod = 'https://api.d-tools.cloud/Catalog/api/v1/Products/GetProducts'
+    date = datetime.now().strftime('%m%d%H%M%S')
+    while m:
+        params = (
+        ('minPrice', 'null'),
+        ('maxPrice', 'null'),
+        ('amazon', 'null'),
+        ('discontinued', 'null'),
+        ('active', 'true'),
+        ('search', search),
+        ('facets', 'false'),
+        ('fields', '*'),
+        ('sort', 'brand'),
+        ('page', page),
+        ('pageSize', '1000'),
+        )
+        p = requests.get(prod,headers=headers, params=params).json()
+        m = p['hasMoreProducts']      
+        df = pd.DataFrame(p['products'])
+        dt = pd.concat([dt,df], ignore_index=True)
+    dt = dt.drop(['id','name','shortName','brandId','categoryId','imageUrl','lengthBased','length','msrpSetTypeId','unitCostSetTypeId','unitPriceSetTypeId','margin','markup','supplierId','supplier','dtin','imageUrl','createdOn','modifiedOn'], axis=1)
+    dt.to_csv('/home/bill/Desktop/'+"DT-Export_"+date+".csv", index=False)
+    out={}
+    out[0]=date
+    return out
+
+###################################################################################################
+
 @app.route('/api/getQuote/<quoteId>', methods=['GET'])
 def index(quoteId):
     
