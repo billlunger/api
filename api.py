@@ -106,7 +106,7 @@ def gettingCatalog(getSearch):
     dt=pd.DataFrame()
     s=getSearch
     if s == 'initial':
-        search = ' '
+        search = 'scope'
     else:
         search = getSearch
     page = 1
@@ -132,7 +132,7 @@ def gettingCatalog(getSearch):
         df = pd.DataFrame(p['products'])
         dt = pd.concat([dt,df], ignore_index=True)
     dt = dt.drop(['id','name','shortName','brandId','categoryId','imageUrl','lengthBased','length','msrpSetTypeId','unitCostSetTypeId','unitPriceSetTypeId','margin','markup','supplierId','supplier','dtin','imageUrl','createdOn','modifiedOn'], axis=1)
-    dt.to_csv('/home/bill/Desktop/'+"DT-Export_"+date+".csv", index=False)
+    dt.to_csv('/home/bill/Desktop/'+"DT-Export.csv", index=False)
     out={}
     out[0]=date
     return out
