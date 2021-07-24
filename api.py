@@ -99,16 +99,16 @@ def gettingCreds():
 
 ###################################################################################################
 
-@app.route('/api/getCatalog/<search>', methods=['GET'])
-def gettingCatalog(search):
+@app.route('/api/getCatalog/<getSearch>', methods=['GET'])
+def gettingCatalog(getSearch):
     
     headers = head()
     dt=pd.DataFrame()
-    s=search
+    s=getSearch
     if s == 'initial':
         search = ''
     else:
-        search= search
+        search = getSearch
     page = 1
     m=True
     prod = 'https://api.d-tools.cloud/Catalog/api/v1/Products/GetProducts'
