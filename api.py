@@ -104,7 +104,11 @@ def gettingCatalog(search):
     
     headers = head()
     dt=pd.DataFrame()
-    search= search
+    s=search
+    if s == 'initial':
+        search = ''
+    else:
+        search= search
     page = 1
     m=True
     prod = 'https://api.d-tools.cloud/Catalog/api/v1/Products/GetProducts'
