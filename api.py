@@ -106,7 +106,7 @@ def gettingCatalog(getSearch):
     dt=pd.DataFrame()
     s=getSearch
     if s == 'initial':
-        search = ''
+        search = ' '
     else:
         search = getSearch
     page = 1
