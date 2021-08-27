@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory, send_file
+from flask import Flask, send_from_directory, send_file, request
 from datetime import datetime
 import requests
 import json
@@ -8,7 +8,8 @@ import urllib.request
 import ssl
 import subprocess
 import re
-import time
+import io
+import math
 
 app = Flask(__name__)
 
@@ -279,7 +280,172 @@ app.config["DOWNLOAD"] = "/home/bill/Desktop"
 def download(quoteId):
     return send_from_directory(app.config["DOWNLOAD"], filename=quoteId, as_attachment=True)
 
+###################################################################################################
+@app.route('/api/updatePricebook', methods=['POST'])
+def updatepricebook():
+    data = request.get_json()
+    dt = data['dt']
+    tp = data['tp']
+    new = data['new']
+    if not dt:
+        out = {'error':'No D-Tools Pricing'}
+        return out
+    elif not tp:
+        out = {'error':'No TigerPaw Pricing'}
+        return out
+    elif not new:
+        out = {'error':'No New Pricing'}
+        return out
+    else:
+        download = '&download=1'
+        getDT = requests.get(dt+download)
+        getTP = requests.get(tp+download)
+        getNEW = requests.get(new+download)
+        dtools = pd.read_csv(io.StringIO(getDT.text))
+        new = pd.read_csv(io.StringIO(getNEW.text))
+        with io.BytesIO(getTP.content) as fh:
+            tigerpaw = pd.io.excel.read_excel(fh)
+        name = dtools['brand'][0]
+        date = datetime.now().strftime('%m%d%H%M%S')
+        filename = f'{name}_{date}.csv'
+        out = {'download':filename, 'name':name}
 
+        price(filename,dtools, new, tigerpaw)
+        
+
+
+        return out
+###################################################################################################
+
+def price(filename,dtools, new, tigerpaw):
+    def roundup(x):
+        if x == 0:
+            return 0
+        elif x < 5:
+            return 5
+        else:
+            return int(math.ceil((x -.99)/ 10.0)) * 10-1
+
+    dtools[['PB Category','PB Subcategory']] = dtools.category.str.split(' > ', expand=True)
+    dtools.drop(['category','quantity', 'msrp','partNumber'], axis=1, inplace=True)
+    dtools['PB Item ID'] = dtools['brand']+ ':'+ dtools['model']
+    tigerpaw[['PB Manufacturer','PB Part No.']] = tigerpaw['PB Item ID'].str.split(':',expand=True)
+    tigerpaw['PB Part No.'] = tigerpaw['PB Part No.'].str.upper()
+
+
+    dtools.rename({'brand':'PB Manufacturer', 'model':'PB Part No.', 'shortDescription':'PB Key Description',
+                    'unitCost':'PB Standard Cost', 'unitPrice':'PB Mfg. List',
+                'discontinued':'PB Inactive', 'active':'PB Item Status'}, axis=1, inplace=True)   
+
+    new['PB Item ID'] = new['PB Manufacturer'] + ':' + new['PB Part No.']
+    dtools['PB Part No.'] = dtools['PB Part No.'].str.upper()
+    new['PB Part No.'] = new['PB Part No.'].str.upper()
+
+    tigerpawParts= tigerpaw['PB Part No.']
+    dtoolsParts = dtools['PB Part No.']
+    newParts = new['PB Part No.']
+
+    #D-Tools parts not in TigerPaw
+    dtNotInTp = dtools[~dtools['PB Part No.'].isin(tigerpawParts)]
+
+    #TigerPaw parts not in D-Tools
+    tpNotInDt = tigerpaw[~tigerpaw['PB Part No.'].isin(dtoolsParts)]
+
+    # update TigerPaw with D-Tools Matching 
+
+    for i, row in tigerpaw.iterrows():
+        tpPart = row['PB Part No.']
+        for x, rowDt in dtools.iterrows():
+            dtPart = rowDt['PB Part No.']
+            dtDesc = rowDt['PB Key Description']
+            dtPrice = rowDt['PB Mfg. List']
+            dtCost = rowDt['PB Standard Cost']
+            dtCat = rowDt['PB Category']
+            dtSubCat = rowDt['PB Subcategory']
+            if tpPart == dtPart:
+                tigerpaw.loc[i,'PB Mfg. List'] = dtPrice
+                tigerpaw.loc[i,'PB Key Description'] = dtDesc
+                tigerpaw.loc[i,'PB Standard Cost'] = dtCost
+                tigerpaw.loc[i,'PB Category'] = dtCat
+                tigerpaw.loc[i,'PB Subcategory'] = dtSubCat
+
+    #Add new D-Tools parts to TigerPaw
+    tpNew = pd.concat([tigerpaw,dtNotInTp],sort=False)
+    tpNew = tpNew.reset_index(drop=True)
+    #Check if part is in new pricelist
+    tpNew['PB Inactive'] = True
+    tpNew['PB Item Status'] = 'Discontinued'
+    for x, rowNew in new.iterrows():
+        newPart1 = rowNew['PB Part No.']
+        for i, row in tpNew.iterrows():
+            tpNewPart = row['PB Part No.']        
+            if newPart1 == tpNewPart:
+                #print(tpNewPart)
+                tpNew.loc[i,'PB Inactive'] = False
+                tpNew.loc[i,'PB Item Status'] = 'Active'
+
+    # update TigerPaw with New Matching 
+    tpNew['PB Key Description'] = tpNew['PB Key Description'].fillna(' ')
+    for i, row in tpNew.iterrows():
+        tpPart = row['PB Part No.']
+        tpDesc = row['PB Key Description']
+        tpPrice = row['PB Mfg. List']
+        tpCost = row['PB Standard Cost']
+        for x, rowNew in new.iterrows():
+            newPart = rowNew['PB Part No.']
+            newDesc = rowNew['PB Key Description']
+            newPrice = rowNew['PB Mfg. List']
+            newCost = rowNew['PB Standard Cost']
+            newUOM = rowNew['PB UOM']
+            if tpPart == newPart:
+                tpNew.loc[i,'PB Mfg. List'] = newPrice
+                tpNew.loc[i,'PB Standard Cost'] = newCost
+                tpNew.loc[i,'PB UOM'] = newUOM
+                if tpDesc == ' ':
+                    tpNew.loc[i,'PB Key Description'] = newDesc
+
+    #TigerPaw parts not in D-Tools
+    tigerpawCombinedParts= tpNew['PB Part No.']
+    newNotInTp = new[~new['PB Part No.'].isin(tigerpawCombinedParts)]
+    for i, row in new.iterrows():
+        part=row['PB Part No.']
+        for x, row in newNotInTp.iterrows():
+            noPart = row['PB Part No.']
+            if part == noPart:
+                new.loc[i,'PB Inactive'] = False
+                new.loc[i,'PB Item Status'] = 'Active'
+    newNotInTp = new[~new['PB Part No.'].isin(tigerpawCombinedParts)]
+
+    #Add new Items to Tigerpaw
+    tpFinal = pd.concat([tpNew,newNotInTp],sort=False)
+    tpFinal = tpFinal.reset_index(drop=True)
+
+    tpFinal['PB Mfg. List'] = tpFinal['PB Mfg. List'].str.replace('$','')
+    tpFinal['PB Mfg. List'] = tpFinal['PB Mfg. List'].str.replace(',','')
+    tpFinal['PB Mfg. List'] = tpFinal['PB Mfg. List'].fillna(0)
+    tpFinal['PB Mfg. List'] = tpFinal['PB Mfg. List'].astype(float)
+    for i, row in tpFinal.iterrows():
+        price = row['PB Mfg. List']
+        part = row['PB Part No.']
+        newPrice = roundup(price)
+        tpFinal.loc[i,'PB Mfg. List'] = newPrice
+
+    tpFinal['PB Item Type'] = 'Material'
+    tpFinal['PB Hot Item'] = False
+    tpFinal['PB G/L Receipts'] = 'Materials Received'
+    tpFinal['PB Taxable'] = True
+    tpFinal['PB Update Std. Cost '] = True
+    tpFinal['PB Update Vendor Cost'] = True
+    for i, row in tpFinal.iterrows():
+        inactive = row['PB Inactive']
+        if inactive:
+            tpFinal.loc[i,'PB Add to Assets'] = False
+        else:
+            tpFinal.loc[i, 'PB Add to Assets'] = True
+    tpFinal['PB Key Description'] = tpFinal['PB Key Description'].str.replace("''",'in.')
+    tpFinal['PB Key Description'] = tpFinal['PB Key Description'].str.replace('"','in.')
+
+    tpFinal.to_csv(f'~/Desktop/{filename}',index=False, line_terminator='\r\n')
 
 ###################################################################################################
 
@@ -397,7 +563,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
         if brand == 'Monitoring':
             df.loc[i, 'itemId'] = 'Monitoring'
 
-############# add system names    
+ ############# add system names    
     rooms = df.drop_duplicates(subset=['location', 'system'])
     for index, row in rooms.iterrows():
             sys = row['system']
@@ -413,7 +579,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
 
     sortPackage = df.drop_duplicates(subset=['packageId'])
     sortPackage = sortPackage[sortPackage.packageId.notnull()]
-############# add package name and dividers
+ ############# add package name and dividers
     for i, row in sortPackage.iterrows():
             pId=row['packageId']
             pIId=row['packageItemId']
@@ -435,7 +601,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
                             'type': 'S', 'order': 1,'packageId':pId ,'packageItemId':pIId,'parentId':0,'locationId':location}, ignore_index=True)
  
     sys = df.drop_duplicates(subset=['location'])
-############# add room names and dividers
+ ############# add room names and dividers
     for i, row in sys.iterrows():
             lid=row['locationId']
             value=row['location']
@@ -450,7 +616,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
                             'location': str(value), 'quantity': 1, 'system': ' ', 'itemId': 'Description',
                             'type': 'S', 'order': 3, 'parentId':0,'locationId':lid}, ignore_index=True)
     
-################ replace locationID with Description for room description
+ ################ replace locationID with Description for room description
     #df['shortDescription'] = df['shortDescription'].replace(locDesc)
     df=df.replace(to_replace={'shortDescription':locDesc}, value=None)
     df=df.replace(to_replace={'locationId':x}, value=None)##################################################
@@ -484,14 +650,14 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
     df['location'] = df['location'].str.replace("''",'in.')
     df['location'] = df['location'].str.replace('"','in.')
     quoteName = re.sub('[^A-Za-z0-9.,& ]+', '-',quoteName)
-##################### write text file  
+ ##################### write text file  
     p='/home/bill/Desktop/'
     if phases:
         txt=open(f'{p}{clientName}-{quoteName}-{str(phaseName)}({date}).txt', "a")
     else:
         txt=open(f'{p}{clientName}-{quoteName}({date}).txt', "a")
     
-######################## Write Project Description    
+ ######################## Write Project Description    
     par = (('quoteId', quoteId),)
     resp = requests.get('https://api.d-tools.cloud/Quote/api/v1/QuoteScopeOfWorks/GetQuoteScopeOfWork', headers=headers, params=par).json()
     html1 = resp['content']
@@ -503,7 +669,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
         html1 = re.sub(r'<li>', '      *', html1)
         html1 = re.sub(r'<li class.*?>', '        *', html1)
         txt.write('Project Description: \n' + html1)
-######################## Write Scopes and Descriptions
+ ######################## Write Scopes and Descriptions
     for i, row in df.iterrows():
         if 'Room' in row['itemId']:
 
@@ -523,7 +689,7 @@ def convertPhases(df,locs,quoteId, lookP, lookB, lookM, phaseName,clientName,quo
         if 'SCOPE' in row['itemId']:
             txt.write(row['shortDescription']+'\n')
         txt.close
-####################### drop Description
+ ####################### drop Description
     filt= df['itemId'] == 'Description'
     df = df.drop(index=df[filt].index)
     #for i, row in df.iterrows():
